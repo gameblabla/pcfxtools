@@ -16,6 +16,7 @@ Copyright (C) 2007		Ryphecha / Mednafen
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <netinet/in.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
 		while((i > 0) && (tmpbuf[i] == 0x0A || tmpbuf[i] == 0x0D))
 			{ tmpbuf[i--] = 0; }
 		if(memcmp(tmpbuf, "binary ", 7) == 0) {
-			snprintf(binname, (255 > (strlen(tmpbuf) - 7)) ? strlen(tmpbuf) - 7 : 255, "%s", tmpbuf + 7);
+			snprintf(binname, (255 > (strlen(tmpbuf) - 6)) ? strlen(tmpbuf) - 6 : 255, "%s", tmpbuf + 7);
 		}else if(memcmp(tmpbuf, "blocks ", 7) == 0) {
 			binblocks = atoi(tmpbuf + 7);
 		}else if(memcmp(tmpbuf, "name ", 5) == 0) {
@@ -141,13 +142,14 @@ int main(int argc, char *argv[])
 	FILE *in_fp, *out_fp;
 	struct stat stat_buf;
 
+	printf("binname %s\n", binname);
 	if(!(in_fp = fopen(binname, "rb"))) {
 		perror("Error opening input file");
 		return EXIT_FAILURE;
 	}
 
-	char *obinname = malloc(strlen(argv[2])+5);
-	sprintf(obinname, "%s.bin", argv[2]);
+	char obinname[256];
+	snprintf(obinname, sizeof(obinname), "%s.bin", argv[2]);
 	if(!(out_fp = fopen(obinname, "wb"))) {
 		perror("Error opening output file");
 		return EXIT_FAILURE;
@@ -210,15 +212,13 @@ int main(int argc, char *argv[])
 	fclose(out_fp);
 
 	/* Output a simple .cue file. */
-	char *cuename = malloc(strlen(argv[2])+5);
-	sprintf(cuename, "%s.cue", argv[2]);
+	char cuename[256];
+	snprintf(cuename, sizeof(cuename), "%s.cue", argv[2]);
 	fp = fopen(cuename, "wb");
 	fprintf(fp, "FILE \"%s\" BINARY\n", obinname);
 	fprintf(fp, "  TRACK 01 MODE1/2048\n");
 	fprintf(fp, "    INDEX 01 00:00:00\n");
 	fclose(fp);
-	free(cuename);
-	free(obinname);
 
 	printf("Done.\n");
 	return EXIT_SUCCESS;
